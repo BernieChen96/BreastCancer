@@ -29,7 +29,10 @@ torch.manual_seed(random_state)
 np.random.seed(random_state)
 
 # 编码
-encode = np.load(root + '/encode.npy', allow_pickle='TRUE').item()
+encode_type = np.load(root + '/encode_type.npy', allow_pickle='TRUE').item()
+decode_type = dict(zip(encode_type.values(), encode_type.keys()))
+encode_category = np.load(root + '/encode_category.npy', allow_pickle='TRUE').item()
+decode_category = dict(zip(encode_category.values(), encode_category.keys()))
 
 
 class BreakHisDataset(Dataset):  # 需要继承data.Dataset
@@ -86,7 +89,7 @@ class BreakHisDataset(Dataset):  # 需要继承data.Dataset
                     for name in files:
                         if name.endswith('png'):
                             img_path = os.path.join(root, name)
-                            labels = [encode[patient[1]], encode[patient[2]]]
+                            labels = [encode_type[patient[1]], encode_category[patient[2]]]
                             image_label_list.append((img_path, labels))
 
         return image_label_list
@@ -109,5 +112,4 @@ def show():
         display_some_images(images, labels)
         return
 
-
-show()
+# show()

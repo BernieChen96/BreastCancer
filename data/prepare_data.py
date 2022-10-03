@@ -56,7 +56,7 @@ main_type_list = []
 sub_category_list = []
 
 # data: First column: Filepath, Second column: abstract category, Third column: concrete category
-with open(root + '/data.csv', 'w') as f:
+with open(root + '/data.csv', 'w', newline='') as f:
     writer = csv.writer(f)
     for patient_path in patient_list:
         main_class = patient_path.split('/')[-1].split('_')[1]
@@ -73,10 +73,11 @@ le_type = LabelEncoder()
 le_category = LabelEncoder()
 le_type.fit(main_type_list)
 le_category.fit(sub_category_list)
-encode = dict(zip(main_type_list, le_type.transform(main_type_list)))
-encode.update(dict(zip(sub_category_list, le_category.transform(sub_category_list))))
+encode_type = dict(zip(main_type_list, le_type.transform(main_type_list)))
+encode_category = (dict(zip(sub_category_list, le_category.transform(sub_category_list))))
 # 保存文件
-np.save(root + '/encode.npy', encode)
+np.save(root + '/encode_type.npy', encode_type)
+np.save(root + '/encode_category.npy', encode_category)
 
 stat_dict = {}
 stat_dict_train = {}
@@ -87,14 +88,14 @@ split = StratifiedShuffleSplit(n_splits=1, test_size=0.2, random_state=random_st
 for train_index, test_index in split.split(patient_list, sub_category_list):
     patient_list_train = [patient_list[index] for index in train_index]
     patient_list_test = [patient_list[index] for index in test_index]
-    with open(root + '/train.csv', 'w') as f:
+    with open(root + '/train.csv', 'w', newline='') as f:
         writer = csv.writer(f)
         for patient_path in patient_list_train:
             main_class = patient_path.split('/')[-1].split('_')[1]
             sub_class = patient_path.split('/')[-1].split('_')[2]
             writer.writerow([patient_path, main_class, sub_class])
 
-    with open(root + '/test.csv', 'w') as f:
+    with open(root + '/test.csv', 'w', newline='') as f:
         writer = csv.writer(f)
         for patient_path in patient_list_test:
             main_class = patient_path.split('/')[-1].split('_')[1]
@@ -125,7 +126,7 @@ def write_stat(li, d, w, des):
 for train_index, test_index in split.split(patient_list, sub_category_list):
     patient_list_train = [patient_list[index] for index in train_index]
     patient_list_test = [patient_list[index] for index in test_index]
-    with open(root + '/stat.csv', 'w') as f:
+    with open(root + '/stat.csv', 'w', newline='') as f:
         writer = csv.writer(f)
         writer.writerow(['part', 'benign', 'malignant', 'DC', 'LC', 'MC', 'PC', 'PT', 'F', 'TA', 'A'])
         stat_dict['B'] = 0

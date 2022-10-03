@@ -76,7 +76,11 @@ this database a useful tool since it makes future benchmarking and evaluation po
         <td>82</td>
     </tr>
 </table>
-      
-      
-     
+
+# Commands  
+
+Data preparation
+
+**BreakHis dataset**  
+```python -m data.prepare_data```
      
