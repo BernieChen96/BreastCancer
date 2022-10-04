@@ -230,14 +230,15 @@ def load_model():
     return classifier_model
 
 
-def classification_report(model):
+def classification_result(model):
     model.eval()
     running_corrects = 0.0
     y_true = []
     y_pred = []
-    targets = []
+    y_pred_prob = []
+    target = []
     for i in range(len(decode)):
-        targets.append(decode[i])
+        target.append(decode[i])
     with torch.no_grad():  # 验证阶段关掉梯度计算
         for i, (inputs, labels) in enumerate(dataloaders['val']):
             # .to(device): copy到device所指定的GPU上去
@@ -246,13 +247,40 @@ def classification_report(model):
             labels = labels.to(device)
             outputs = model(inputs)
             _, preds = torch.max(outputs, 1)
+            pred_prob = nn.functional.softmax(outputs, dim=1)
             y_true.extend(labels.data.tolist())
             y_pred.extend(preds.tolist())
+            y_pred_prob.extend(pred_prob.tolist())
             running_corrects += torch.sum(preds == labels.data)
     acc = running_corrects.double() / dataset_sizes['val']
-    print("验证集上的准确率：", acc)
-    pi.report(y_true, y_pred, target_names=targets)
-    print(pi.save_classification_report(y_true, y_pred, target_names=targets, save_path=config.classifier_acc_report))
+    print("验证集上的准确率：", acc.item())
+
+    result_dict = {'y_true': y_true, 'y_pred': y_pred, 'y_pred_prob': y_pred_prob, 'target': target}
+    save_dict_by_numpy(config.classifier_result, result_dict)
+
+
+def classifier_report():
+    result_dict = np.load(config.classifier_result, allow_pickle=True).item()
+    y_true = result_dict['y_true']
+    y_pred = result_dict['y_pred']
+    y_pred_prob = result_dict['y_pred_prob']
+    target = result_dict['target']
+    # acc report
+    print(pi.save_classification_report(y_true, y_pred, target_names=target, save_path=config.classifier_acc_report))
+    # confusion matrix
+    pi.plot_confusion_matrix(y_true, y_pred, title='Confusion Metrix for Breast Cancer', classes=target,
+                             save_path=config.classifier_confusion_metrix)
+    # auc
+    if len(target) == 2:
+        pi.plot_roc(y_true, y_pred)
+    else:
+        pi.plot_roc_mutil(y_true, y_pred_prob, target)
+
+
+def save_dict_by_numpy(filename, dict_vale):
+    if not (os.path.exists(os.path.dirname(filename))):
+        os.mkdir(os.path.dirname(filename))
+    np.save(filename, dict_vale)
 
 
 if __name__ == '__main__':
@@ -261,4 +289,6 @@ if __name__ == '__main__':
         visualize_model(model)
     elif config.classifier_mode == 'report':
         model = load_model()
-        classification_report(model)
+        if not os.path.exists(config.classifier_result):
+            classification_result(model)
+        classifier_report()
