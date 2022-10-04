@@ -132,3 +132,5 @@ dmypy.json
 
 *.pth
 /report/
+/gan/sample/
+/gan/data/
