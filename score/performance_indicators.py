@@ -66,7 +66,7 @@ def plot_confusion_matrix(y_true,
     plt.show()
 
 
-def plot_roc(y_true, y_pred):
+def plot_roc(y_true, y_pred, save_path):
     # roc_log = roc_auc_score(y_true, y_pred)
     false_positive_rate, true_positive_rate, threshold = roc_curve(y_true,
                                                                    y_pred)
@@ -78,11 +78,12 @@ def plot_roc(y_true, y_pred):
     plt.ylabel('True positive rate')
     plt.title('ROC curve')
     plt.legend(loc='best')
+    plt.savefig(save_path)
     plt.show()
     # plt.savefig(ROC_PLOT_FILE, bbox_inches='tight')
 
 
-def plot_roc_mutil(y_true, y_pred_prob, labels):
+def plot_roc_mutil(y_true, y_pred_prob, labels, save_path):
     print(labels)
     classes = list(range(len(labels)))
     y_true = label_binarize(y_true, classes=classes)
@@ -109,4 +110,5 @@ def plot_roc_mutil(y_true, y_pred_prob, labels):
     plt.ylabel('True Positive Rate')
     plt.title('Receiver operating characteristic for multi-class data')
     plt.legend(loc="lower right")
+    plt.savefig(save_path)
     plt.show()

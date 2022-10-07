@@ -18,7 +18,7 @@ root = config.data_root
 train_csv = root + '/train.csv'
 
 
-class Trainer():
+class Trainer:
     def __init__(self):
         super(Trainer, self).__init__()
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")

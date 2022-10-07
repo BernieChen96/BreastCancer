@@ -79,11 +79,17 @@ this database a useful tool since it makes future benchmarking and evaluation po
 
 # Commands  
 
-Data preparation
+## Data preparation  
 
 **BreakHis dataset**  
-```python -m data.prepare_data```
+```python prepare_data.py --dataset BreakHis --manual_seed 42```
 
+## Classify  
+```python classify.py --dataset BreakHis --manual_seed 42 --model efficientnet-b0```
+
+## Metrics
+```python run_metrics.py --dataset BreakHis --manual_seed 42 --model efficientnet-b0```  
+```python run_metrics.py --dataset BreakHis --manual_seed 42 --model densenet201```
 # Results
 
 DenseNet201  

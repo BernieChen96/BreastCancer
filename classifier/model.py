@@ -1,32 +1,32 @@
 # -*- coding: utf-8 -*-
-# @Time    : 2022/10/3 14:52
+# @Time    : 2022/10/7 17:03
 # @Author  : CMM
 # @File    : model.py
 # @Software: PyCharm
-import torch
 from torch import nn
-from torchvision.models import densenet201, DenseNet201_Weights
+from torchvision.models import densenet201, efficientnet_b0, regnet_y_3_2gf
 
 
 class Net(nn.Module):
 
-    def __init__(self, num_classes=2, w=DenseNet201_Weights.DEFAULT):
+    def __init__(self, opt):
         super(Net, self).__init__()
-        model = densenet201(weights=w)
-        in_features = model.classifier.in_features
-        # print(model)
-        self.backbone = nn.Sequential(*list(model.children())[0])
-        # print(self.backbone)
-        self.tail = nn.Sequential(
-            nn.ReLU(),
-            nn.AdaptiveAvgPool2d((1, 1)),
-            nn.Dropout(0.5)
-        )
-        self.classifier = nn.Linear(in_features, num_classes)
+        if opt.model == 'densenet201':
+            # 224*224*3
+            self.model = densenet201(weights=opt.weights)
+            in_features = self.model.classifier.in_features
+            self.model.classifier = nn.Sequential(
+                nn.Dropout(0.2),
+                nn.Linear(in_features, opt.n_classes)
+            )
+        elif opt.model == 'efficientnet-b0':
+            # 224*224*3
+            self.model = efficientnet_b0(weights=opt.weights)
+            self.model.classifier = nn.Sequential(
+                nn.Dropout(0.2, inplace=True),
+                nn.Linear(1280, opt.n_classes)
+            )
 
     def forward(self, x):
-        features = self.backbone(x)
-        out = self.tail(features)
-        out = torch.flatten(out, 1)
-        out = self.classifier(out)
+        out = self.model(x)
         return out

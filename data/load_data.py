@@ -6,37 +6,16 @@
 # @Software: PyCharm
 import csv
 import os
-import random
-import torch
-import config
+
 import numpy as np
 from PIL import Image
 from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms
 from data.image_processing import display_some_images
 
-root = config.data_root
-
-train_csv = root + '/train.csv'
-test_csv = root + '/test.csv'
-
-random_state = config.random_state
-random.seed(random_state)
-# 为GPU设置种子
-torch.cuda.manual_seed(random_state)
-# 为CPU设置种子用于生成随机数，以使得结果是确定的
-torch.manual_seed(random_state)
-np.random.seed(random_state)
-
-# 编码
-encode_type = np.load(root + '/encode_type.npy', allow_pickle='TRUE').item()
-decode_type = dict(zip(encode_type.values(), encode_type.keys()))
-encode_category = np.load(root + '/encode_category.npy', allow_pickle='TRUE').item()
-decode_category = dict(zip(encode_category.values(), encode_category.keys()))
-
 
 class BreakHisDataset(Dataset):  # 需要继承data.Dataset
-    def __init__(self, filename, repeat=1, transform=None):
+    def __init__(self, filename, data_path, repeat=1, transform=None, ):
         """
         :param filename: 数据文件TXT：格式：imge_name.jpg label1_id labe2_id
         :param resize_height 为None时，不进行缩放
@@ -49,8 +28,11 @@ class BreakHisDataset(Dataset):  # 需要继承data.Dataset
         self.image_label_list = self.read_file(filename)
         self.len = len(self.image_label_list)
         self.repeat = repeat
-
         self.transform = transform
+        self.encode_type = np.load(data_path + '/encode_type.npy', allow_pickle='TRUE').item()
+        self.encode_category = np.load(data_path + '/encode_category.npy', allow_pickle='TRUE').item()
+        self.decode_type = dict(zip(self.encode_type.values(), self.encode_type.keys()))
+        self.decode_category = dict(zip(self.encode_category.values(), self.encode_category.keys()))
 
     def __getitem__(self, i):
         # TODO
@@ -61,10 +43,10 @@ class BreakHisDataset(Dataset):  # 需要继承data.Dataset
         index = i % self.len
         # print("i={},index={}".format(i, index))
         image_path, labels = self.image_label_list[index]
-
         img = Image.open(image_path).convert('RGB')
         if self.transform is not None:
             img = self.transform(img)
+        labels = [self.encode_type[labels[0]], self.encode_category[labels[1]]]
         return img, labels
 
     def __len__(self):
@@ -89,13 +71,13 @@ class BreakHisDataset(Dataset):  # 需要继承data.Dataset
                     for name in files:
                         if name.endswith('png'):
                             img_path = os.path.join(root, name)
-                            labels = [encode_type[patient[1]], encode_category[patient[2]]]
+                            labels = [patient[1], patient[2]]
                             image_label_list.append((img_path, labels))
 
         return image_label_list
 
 
-def show():
+def show(csv):
     # print(BreakHisDataset.read_file(train_csv)[0])
     # print(len(BreakHisDataset.read_file(test_csv)))
     transform = transforms.Compose([
@@ -104,7 +86,7 @@ def show():
         transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
     ])
 
-    train_data = BreakHisDataset(train_csv, repeat=None, transform=transform)
+    train_data = BreakHisDataset(csv, repeat=None, transform=transform)
     train_loader = DataLoader(train_data, batch_size=12, num_workers=0, shuffle=True)
     for i, (images, labels) in enumerate(train_loader):
         # show_image(image, labels[0][0])
