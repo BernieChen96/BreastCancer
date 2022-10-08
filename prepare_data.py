@@ -11,4 +11,5 @@ if __name__ == '__main__':
     opt = parser.parse_args()
     print('Perform data preparation task.')
     config.post_data_preparation_config(opt)
+    opt.data_path = config.get_dataset_path(opt.dataset)
     prepare(opt)

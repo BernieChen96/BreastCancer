@@ -4,25 +4,13 @@
 # @File    : train.py
 # @Software: PyCharm
 import os
-import random
 import time
 
-import numpy as np
 import torch
 from torch import nn, optim
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 from classifier.model import Net
-
-
-
-def set_seed(random_state):
-    random.seed(random_state)
-    # 为GPU设置种子
-    torch.cuda.manual_seed(random_state)
-    # 为CPU设置种子用于生成随机数，以使得结果是确定的
-    torch.manual_seed(random_state)
-    np.random.seed(random_state)
 
 
 def init_dataloader(load_dataset, csv, data_path, preprocess, repeat=1, batch_size=16, num_workers=0, shuffle=True):
@@ -41,8 +29,6 @@ def init_dataloader(load_dataset, csv, data_path, preprocess, repeat=1, batch_si
 class Trainer:
 
     def __init__(self, opt):
-        # set seed
-        set_seed(opt.manual_seed)
         # init model
         self.model = Net(opt).to(opt.device)
         # init dataloader

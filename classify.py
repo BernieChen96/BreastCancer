@@ -4,6 +4,7 @@
 # @File    : classify.py
 # @Software: PyCharm
 import config
+from classifier import functions
 from classifier.train import Trainer
 
 if __name__ == '__main__':

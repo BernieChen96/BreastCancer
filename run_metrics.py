@@ -11,6 +11,8 @@ import torch
 import config
 from matplotlib import pyplot as plt
 from torch import nn
+
+from classifier import functions
 from classifier.model import Net
 from classifier.train import init_dataloader
 from score import performance_indicators as pi
@@ -129,19 +131,21 @@ def classifier_report(opt):
 
 
 def main(opt):
-    set_seed(opt.manual_seed)
-    test_csv = opt.data_path + '/test.csv'
-    model = load_model(opt)
-    test_dataloader = init_dataloader(opt.load_dataset, test_csv, opt.data_path, opt.weights.transforms(),
-                                      shuffle=True)
-    if opt.label_class == 0:
-        decode = test_dataloader.dataset.decode_type
-    else:
-        decode = test_dataloader.dataset.decode_category
-    visualize_model(opt, model, test_dataloader, decode)
-    if not os.path.exists(opt.result_path):
-        classification_result(opt, model, test_dataloader, decode)
-    classifier_report(opt)
+    if opt.model == 'densenet201' or opt.model == 'efficientnet-b0':
+        test_csv = opt.data_path + '/test.csv'
+        model = load_model(opt)
+        test_dataloader = init_dataloader(opt.load_dataset, test_csv, opt.data_path, opt.weights.transforms(),
+                                          shuffle=True)
+        if opt.label_class == 0:
+            decode = test_dataloader.dataset.decode_type
+        else:
+            decode = test_dataloader.dataset.decode_category
+        visualize_model(opt, model, test_dataloader, decode)
+        if not os.path.exists(opt.result_path):
+            classification_result(opt, model, test_dataloader, decode)
+        classifier_report(opt)
+    elif opt.model == '':
+        pass
 
 
 if __name__ == '__main__':

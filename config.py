@@ -6,14 +6,11 @@
 # @Software: PyCharm
 import os
 import argparse
-
+import random
+import numpy as np
 import torch
 from torchvision.models import DenseNet201_Weights, EfficientNet_B0_Weights
-
 from data.load_data import BreakHisDataset
-
-# ------ Basic configuration ------
-root = os.path.abspath(os.path.dirname(__file__))
 
 # ------ gan configuration ------
 n_classes = 2
@@ -30,6 +27,7 @@ sample_interval = 400
 
 # ------ Basic configuration ------
 def get_basic_argument():
+    root = os.path.abspath(os.path.dirname(__file__))
     parser = argparse.ArgumentParser("basic configuration")
     parser.add_argument('--root', default=root, help='project root path')
     parser.add_argument('--dataset', default='BreakHis',
@@ -74,9 +72,11 @@ def post_classifier_config(opt):
     if not os.path.exists(checkpoint_dir):
         os.makedirs(checkpoint_dir)
     opt.checkpoint = checkpoint_dir + f'/{opt.dataset}_{opt.c}_best.pth'
+    set_seed(opt.manual_seed)
+    print("Random Seed: ", opt.manual_seed)
 
 
-# ------ metrics configuration ------
+# ------ score configuration ------
 def get_metrics_argument():
     parser = get_basic_argument()
     parser.add_argument('--model', default='densenet201',
@@ -114,11 +114,16 @@ def get_data_preparation_argument():
     return parser
 
 
-def post_data_preparation_config(opt):
-    opt.data_path = get_dataset_path(opt.dataset)
-
-
 def get_dataset_path(dataset):
     if dataset == 'BreakHis':
         data_path = 'C:/Users/CMM/Desktop/BreaKHis_v1/histology_slides/breast'
     return data_path
+
+
+def set_seed(random_state):
+    random.seed(random_state)
+    # 为GPU设置种子
+    torch.cuda.manual_seed(random_state)
+    # 为CPU设置种子用于生成随机数，以使得结果是确定的
+    torch.manual_seed(random_state)
+    np.random.seed(random_state)
