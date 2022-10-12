@@ -32,13 +32,16 @@ def display_some_images(images, labels, is_norm=True):
     fig = plt.figure(figsize=(15, 15))
     columns = 4
     rows = 3
+    cmap = None
+    if images.shape[1] == 1:
+        cmap = 'gray'
     for i in range(0, columns * rows):
         ax = fig.add_subplot(rows, columns, i + 1)
-        ax.title.set_text(labels[0][i].numpy())
+        ax.title.set_text(labels[i].numpy())
         if is_norm:
             image = images[i] / 2 + 0.5
         npimg = image.numpy()
         npimg = np.transpose(npimg, (1, 2, 0))
-        plt.imshow(npimg, interpolation='nearest')
+        plt.imshow(npimg, interpolation='nearest', cmap=cmap)
     plt.tight_layout()
     plt.show()

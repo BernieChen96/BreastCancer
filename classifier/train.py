@@ -8,15 +8,9 @@ import time
 
 import torch
 from torch import nn, optim
-from torch.utils.data import DataLoader
+
 from tqdm import tqdm
 from classifier.model import Net
-
-
-def init_dataloader(load_dataset, csv, data_path, preprocess, repeat=1, batch_size=16, num_workers=0, shuffle=True):
-    dataset = load_dataset(csv, data_path, repeat=repeat, transform=preprocess)
-    dataloader = DataLoader(dataset, batch_size=batch_size, num_workers=num_workers, shuffle=shuffle)
-    return dataloader
 
 
 # 编码
@@ -32,13 +26,8 @@ class Trainer:
         # init model
         self.model = Net(opt).to(opt.device)
         # init dataloader
-        train_csv = opt.data_path + '/train.csv'
-        test_csv = opt.data_path + '/test.csv'
-        train_loader = init_dataloader(opt.load_dataset, train_csv, opt.data_path, opt.weights.transforms())
-        test_loader = init_dataloader(opt.load_dataset, test_csv, opt.data_path, opt.weights.transforms(),
-                                      shuffle=False)
-        self.dataloaders = {'train': train_loader, 'val': test_loader}
-        self.dataset_sizes = {'train': train_loader.dataset.__len__(), 'val': test_loader.dataset.__len__()}
+        self.dataloaders = {'train': opt.train_loader, 'val': opt.test_loader}
+        self.dataset_sizes = {'train': opt.train_loader.dataset.__len__(), 'val': opt.test_loader.dataset.__len__()}
         # init criterion & optimizer
         self.criterion = nn.CrossEntropyLoss()
         self.optimizer = optim.Adam(self.model.parameters(), lr=opt.lr, betas=(opt.b1, opt.b2))
@@ -61,7 +50,8 @@ class Trainer:
             # 迭代数据
             for inputs, labels in tqdm(self.dataloaders[phase]):
                 # .to(device): copy一份到device所指定的GPU上去，之后的运算都在GPU上进行。
-                labels = labels[opt.label_class]
+                if opt.label_class is not None:
+                    labels = labels[opt.label_class]
                 inputs = inputs.to(opt.device)
                 labels = labels.to(opt.device)
 

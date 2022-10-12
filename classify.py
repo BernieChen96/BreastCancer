@@ -11,5 +11,6 @@ if __name__ == '__main__':
     parser = config.get_classifier_argument()
     opt = parser.parse_args()
     config.post_classifier_config(opt)
+    print(opt)
     trainer = Trainer(opt)
     trainer.train(opt)

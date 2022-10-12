@@ -8,23 +8,26 @@ import csv
 import os
 
 import numpy as np
+import torch
 from PIL import Image
 from torch.utils.data import Dataset, DataLoader
-from torchvision import transforms
+from torchvision import transforms, datasets
 from data.image_processing import display_some_images
 
 
 class BreakHisDataset(Dataset):  # 需要继承data.Dataset
-    def __init__(self, filename, data_path, repeat=1, transform=None, ):
+    def __init__(self, data_path, train, repeat=1, transform=None, ):
         """
-        :param filename: 数据文件TXT：格式：imge_name.jpg label1_id labe2_id
-        :param resize_height 为None时，不进行缩放
-        :param resize_width  为None时，不进行缩放，
-        PS：当参数resize_height或resize_width其中一个为None时，可实现等比例缩放
+        :param data_path 数据根目录
+        :param train True or False 是否为训练数据
         :param repeat: 所有样本数据重复次数，默认循环一次，当repeat为None时，表示无限循环<sys.maxsize
         """
         # TODO
         # 1. Initialize file path or list of file names.
+        if train:
+            filename = data_path + '/train.csv'
+        else:
+            filename = data_path + '/test.csv'
         self.image_label_list = self.read_file(filename)
         self.len = len(self.image_label_list)
         self.repeat = repeat
@@ -77,21 +80,39 @@ class BreakHisDataset(Dataset):  # 需要继承data.Dataset
         return image_label_list
 
 
-def show(csv):
+def cifar10_dataset(train=True, data_path='./public', transform=None):
+    if transform is None:
+        transform = transforms.Compose([
+            transforms.ToTensor(),  # 转换成张量
+            transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))  # 标准化
+        ])
+    return datasets.CIFAR10(root=data_path, train=train, download=True,
+                            transform=transform)
+
+
+def show(load_dataset, params):
     # print(BreakHisDataset.read_file(train_csv)[0])
     # print(len(BreakHisDataset.read_file(test_csv)))
-    transform = transforms.Compose([
-        transforms.Resize((224, 224)),
-        transforms.ToTensor(),
-        transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
-    ])
-
-    train_data = BreakHisDataset(csv, repeat=None, transform=transform)
+    if 'transform' not in params.keys():
+        transform = transforms.Compose([
+            transforms.Resize((224, 224)),
+            transforms.ToTensor(),
+            transforms.Normalize((0.5,), (0.5,))
+        ])
+        params['transform'] = transform
+    print(params)
+    train_data = load_dataset(**params)
     train_loader = DataLoader(train_data, batch_size=12, num_workers=0, shuffle=True)
     for i, (images, labels) in enumerate(train_loader):
         # show_image(image, labels[0][0])
-        print(labels)
+        print("labels:", labels)
+        if isinstance(labels, list):
+            labels = labels[0]
         display_some_images(images, labels)
-        return
+        break
 
-# show()
+# torch.manual_seed(42)
+# data_path = 'C:/Users/CMM/Desktop/BreaKHis_v1/histology_slides/breast'
+# show(cifar10_dataset, params={"train": True})
+# show(BreakHisDataset, params={"data_path": "C:/Users/CMM/Desktop/BreaKHis_v1/histology_slides/breast",
+#                               "train": True})

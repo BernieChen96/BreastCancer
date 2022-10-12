@@ -10,7 +10,8 @@ import random
 import numpy as np
 import torch
 from torchvision.models import DenseNet201_Weights, EfficientNet_B0_Weights
-from data.load_data import BreakHisDataset
+from data.load_data import BreakHisDataset, cifar10_dataset
+from torch.utils.data import DataLoader
 
 # ------ gan configuration ------
 n_classes = 2
@@ -46,20 +47,19 @@ def get_classifier_argument():
     parser.add_argument('--b1', default=0.5, type=float, help='learning rate')
     parser.add_argument('--b2', default=0.999, type=float, help='learning rate')
     parser.add_argument('--epochs', default=20, type=int, help='epochs')
+    parser.add_argument('--proportion', default=1, type=float, help='Training data proportion')
     return parser
+
+
+def init_dataloader(load_dataset, csv, data_path, preprocess, repeat=1, batch_size=16, num_workers=0, shuffle=True):
+    dataset = load_dataset(csv, data_path, repeat=repeat, transform=preprocess)
+    dataloader = DataLoader(dataset, batch_size=batch_size, num_workers=num_workers, shuffle=shuffle)
+    return dataloader
 
 
 def post_classifier_config(opt):
     opt.data_path = get_dataset_path(opt.dataset)
     opt.root = opt.root + '/classifier'
-    if opt.dataset == 'BreakHis':
-        opt.load_dataset = BreakHisDataset
-        if opt.c == 'type':
-            opt.n_classes = 2
-            opt.label_class = 0
-        elif opt.c == 'category':
-            opt.n_classes = 8
-            opt.label_class = 1
     opt.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     if opt.model == 'densenet201':
         opt.weights = DenseNet201_Weights.DEFAULT
@@ -68,12 +68,56 @@ def post_classifier_config(opt):
     else:
         print(f'{opt.model} does not exist.')
         exit(0)
+    set_seed(opt.manual_seed)
+    print("Random Seed: ", opt.manual_seed)
     checkpoint_dir = opt.root + f'/checkpoint/{opt.model}'
     if not os.path.exists(checkpoint_dir):
         os.makedirs(checkpoint_dir)
-    opt.checkpoint = checkpoint_dir + f'/{opt.dataset}_{opt.c}_best.pth'
-    set_seed(opt.manual_seed)
-    print("Random Seed: ", opt.manual_seed)
+    if opt.dataset == 'BreakHis':
+        if opt.c == 'type':
+            opt.n_classes = 2
+            opt.label_class = 0
+        elif opt.c == 'category':
+            opt.n_classes = 8
+            opt.label_class = 1
+        opt.train_loader = DataLoader(BreakHisDataset(opt.data_path,
+                                                      train=True,
+                                                      repeat=1,
+                                                      transform=opt.weights.transforms()
+                                                      ),
+                                      batch_size=16,
+                                      num_workers=0,
+                                      shuffle=True)
+        opt.test_loader = DataLoader(BreakHisDataset(opt.data_path,
+                                                     train=False,
+                                                     repeat=1,
+                                                     transform=opt.weights.transforms()
+                                                     ),
+                                     batch_size=16,
+                                     num_workers=0,
+                                     shuffle=False)
+        opt.checkpoint = checkpoint_dir + f'/{opt.dataset}_{opt.c}_best.pth'
+    elif opt.dataset == 'cifar10':
+        opt.n_classes = 10
+        opt.label_class = None
+        opt.train_loader = DataLoader(cifar10_dataset(train=True,
+                                                      data_path=opt.data_path,
+                                                      transform=opt.weights.transforms()
+                                                      ),
+                                      batch_size=16,
+                                      num_workers=0,
+                                      shuffle=True)
+        opt.test_loader = DataLoader(cifar10_dataset(data_path=opt.data_path,
+                                                     train=False,
+                                                     transform=opt.weights.transforms()
+                                                     ),
+                                     batch_size=16,
+                                     num_workers=0,
+                                     shuffle=False)
+        opt.checkpoint = checkpoint_dir + f'/{opt.dataset}_{opt.proportion}_best.pth'
+    else:
+        print(f'{opt.dataset} does not exist.')
+        exit(0)
 
 
 # ------ score configuration ------
@@ -117,6 +161,11 @@ def get_data_preparation_argument():
 def get_dataset_path(dataset):
     if dataset == 'BreakHis':
         data_path = 'C:/Users/CMM/Desktop/BreaKHis_v1/histology_slides/breast'
+    elif dataset == 'cifar10':
+        data_path = './public'
+    else:
+        print(f'{dataset} does not exists')
+        exit(0)
     return data_path
 
 
