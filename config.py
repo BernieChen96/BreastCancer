@@ -11,7 +11,7 @@ import numpy as np
 import torch
 from torchvision.models import DenseNet201_Weights, EfficientNet_B0_Weights
 from data.load_data import BreakHisDataset, cifar10_dataset
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, random_split
 
 # ------ gan configuration ------
 n_classes = 2
@@ -51,12 +51,6 @@ def get_classifier_argument():
     return parser
 
 
-def init_dataloader(load_dataset, csv, data_path, preprocess, repeat=1, batch_size=16, num_workers=0, shuffle=True):
-    dataset = load_dataset(csv, data_path, repeat=repeat, transform=preprocess)
-    dataloader = DataLoader(dataset, batch_size=batch_size, num_workers=num_workers, shuffle=shuffle)
-    return dataloader
-
-
 def post_classifier_config(opt):
     opt.data_path = get_dataset_path(opt.dataset)
     opt.root = opt.root + '/classifier'
@@ -74,17 +68,11 @@ def post_classifier_config(opt):
     if not os.path.exists(checkpoint_dir):
         os.makedirs(checkpoint_dir)
     if opt.dataset == 'BreakHis':
-        if opt.c == 'type':
-            opt.n_classes = 2
-            opt.label_class = 0
-        elif opt.c == 'category':
-            opt.n_classes = 8
-            opt.label_class = 1
-        opt.train_loader = DataLoader(BreakHisDataset(opt.data_path,
-                                                      train=True,
-                                                      repeat=1,
-                                                      transform=opt.weights.transforms()
-                                                      ),
+        train_dataset = BreakHisDataset(opt.data_path,
+                                        train=True,
+                                        repeat=1,
+                                        transform=opt.weights.transforms())
+        opt.train_loader = DataLoader(train_dataset,
                                       batch_size=16,
                                       num_workers=0,
                                       shuffle=True)
@@ -97,13 +85,26 @@ def post_classifier_config(opt):
                                      num_workers=0,
                                      shuffle=False)
         opt.checkpoint = checkpoint_dir + f'/{opt.dataset}_{opt.c}_best.pth'
+        if opt.c == 'type':
+            opt.n_classes = 2
+            opt.label_class = 0
+            opt.decode = train_dataset.decode_type
+        elif opt.c == 'category':
+            opt.n_classes = 8
+            opt.label_class = 1
+            opt.decode = train_dataset.decode_category
     elif opt.dataset == 'cifar10':
         opt.n_classes = 10
         opt.label_class = None
-        opt.train_loader = DataLoader(cifar10_dataset(train=True,
-                                                      data_path=opt.data_path,
-                                                      transform=opt.weights.transforms()
-                                                      ),
+        train_dataset = cifar10_dataset(train=True,
+                                        data_path=opt.data_path,
+                                        transform=opt.weights.transforms()
+                                        )
+        train_length = train_dataset.__len__()
+        part_train_length = int(opt.proportion * train_length)
+        train_dataset = random_split(train_dataset, [part_train_length, train_length - part_train_length])[0]
+        print("The training dataset length is:", train_dataset.__len__())
+        opt.train_loader = DataLoader(train_dataset,
                                       batch_size=16,
                                       num_workers=0,
                                       shuffle=True)

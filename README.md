@@ -77,19 +77,21 @@ this database a useful tool since it makes future benchmarking and evaluation po
     </tr>
 </table>
 
-# Commands  
+# Commands
 
-### Data preparation  
+### Data preparation
 
 **BreakHis dataset**  
 ```python prepare_data.py --dataset BreakHis --manual_seed 42```  
 **Mnist dataset**
 
-### Classify  
-```python classify.py --dataset BreakHis --manual_seed 42 --model efficientnet-b0```  
-```python classify.py --dataset cifar10 --manual_seed 42 --model efficientnet-b0```
+### Classify
 
-### Metrics  
+```python classify.py --dataset BreakHis --manual_seed 42 --model efficientnet-b0```  
+```python classify.py --dataset cifar10 --manual_seed 42 --model efficientnet-b0 --proportion 0.5```
+
+### Metrics
+
 **Accuracy, Recall, F1-score, ROC, Confusion-metrix**  
 ```python run_metrics.py --dataset BreakHis --manual_seed 42 --model efficientnet-b0```    
 ```python run_metrics.py --dataset BreakHis --manual_seed 42 --model densenet201```  
@@ -97,9 +99,9 @@ this database a useful tool since it makes future benchmarking and evaluation po
 
 # Results
 
-DenseNet201  
+DenseNet201
 
-**Type**  
+**Type**
 
 |     | precision | recall | f1-score | support |
 |-----|-----------|--------|----------|---------|

@@ -11,10 +11,7 @@ import torch
 import config
 from matplotlib import pyplot as plt
 from torch import nn
-
-from classifier import functions
 from classifier.model import Net
-from classifier.train import init_dataloader
 from score import performance_indicators as pi
 
 
@@ -35,7 +32,8 @@ def visualize_model(opt, model, dataloader, decode):
     plt.figure(figsize=(8, 8))
     for i, (inputs, labels) in enumerate(dataloader):
         # .to(device): copy到device所指定的GPU上去
-        labels = labels[opt.label_class]
+        if opt.label_class is not None:
+            labels = labels[opt.label_class]
         inputs = inputs.to(opt.device)
         labels = labels.to(opt.device)
 
@@ -95,7 +93,8 @@ def classification_result(opt, model, dataloader, decode):
         target.append(decode[i])
     for i, (inputs, labels) in enumerate(dataloader):
         # .to(device): copy到device所指定的GPU上去
-        labels = labels[opt.label_class]
+        if opt.label_class is not None:
+            labels = labels[opt.label_class]
         inputs = inputs.to(opt.device)
         labels = labels.to(opt.device)
         outputs = model(inputs)
@@ -132,17 +131,10 @@ def classifier_report(opt):
 
 def main(opt):
     if opt.model == 'densenet201' or opt.model == 'efficientnet-b0':
-        test_csv = opt.data_path + '/test.csv'
         model = load_model(opt)
-        test_dataloader = init_dataloader(opt.load_dataset, test_csv, opt.data_path, opt.weights.transforms(),
-                                          shuffle=True)
-        if opt.label_class == 0:
-            decode = test_dataloader.dataset.decode_type
-        else:
-            decode = test_dataloader.dataset.decode_category
-        visualize_model(opt, model, test_dataloader, decode)
+        visualize_model(opt, model, opt.test_loader, opt.decode)
         if not os.path.exists(opt.result_path):
-            classification_result(opt, model, test_dataloader, decode)
+            classification_result(opt, model, opt.test_loader, opt.decode)
         classifier_report(opt)
     elif opt.model == '':
         pass
