@@ -5,26 +5,14 @@
 # @File    : trainer.py
 # @Software: PyCharm
 import torch
-from torch.utils.data import DataLoader
-from torchvision import datasets, transforms
-
-from data.load_data import BreakHisDataset
 from gan.acgan.model import Generator, Discriminator
 import torchvision.utils as vutils
-import config
-
-root = config.data_root
-
-train_csv = root + '/train.csv'
 
 
 class Trainer:
-    def __init__(self):
+    def __init__(self, opt):
         super(Trainer, self).__init__()
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self.dataset = None
-        self.dataloader = None
-        self.classes = None
         self.fixed_noise = None
         self.fixed_labels = None
         self.optimizer_G = None
@@ -35,23 +23,12 @@ class Trainer:
         self.net_G = None
         self.real_label = None
         self.fake_label = None
-        self.setup()
+        self.setup(opt)
 
-    def setup(self):
-        # Initialize dataset
-        transform = transforms.Compose(
-            [transforms.Resize((config.img_size, config.img_size)), transforms.ToTensor(),
-             transforms.Normalize([0.5], [0.5])]
-        )
-        self.dataset = BreakHisDataset(train_csv, repeat=1, transform=transform)
-
-        self.dataloader = DataLoader(self.dataset,
-                                     batch_size=config.batch_size,
-                                     shuffle=True)
-
+    def setup(self, opt):
         # Initialize generator and discriminator
-        self.net_G = Generator().to(self.device)
-        self.net_D = Discriminator().to(self.device)
+        self.net_G = Generator(opt).to(self.device)
+        self.net_D = Discriminator(opt).to(self.device)
         # if config.NET_G != '':
         #     self.net_G.load_state_dict(torch.load(config.NET_G))
         # print(self.net_G)
@@ -64,13 +41,13 @@ class Trainer:
         self.auxiliary_loss = torch.nn.CrossEntropyLoss()
 
         # Initialize optimizer
-        self.optimizer_G = torch.optim.Adam(self.net_G.parameters(), config.lr, betas=(config.b1, config.b2))
-        self.optimizer_D = torch.optim.Adam(self.net_D.parameters(), config.lr, betas=(config.b1, config.b2))
+        self.optimizer_G = torch.optim.Adam(self.net_G.parameters(), opt.lr, betas=(opt.b1, opt.b2))
+        self.optimizer_D = torch.optim.Adam(self.net_D.parameters(), opt.lr, betas=(opt.b1, opt.b2))
 
-        self.fixed_noise = torch.randn(config.batch_size, config.latent_dim, device=self.device)
-        self.fixed_labels = torch.arange(0, config.batch_size, device=self.device)
+        self.fixed_noise = torch.randn(opt.batch, opt.n_z, device=self.device)
+        self.fixed_labels = torch.arange(0, opt.batch, device=self.device)
         for i in range(len(self.fixed_labels)):
-            self.fixed_labels[i] = self.fixed_labels[i] % config.n_classes
+            self.fixed_labels[i] = self.fixed_labels[i] % opt.n_c
         self.real_label = 1
         self.fake_label = 0
 
@@ -81,10 +58,10 @@ class Trainer:
         # # 查看数据
         # self.summary_embedding(self.dataset, self.classes)
 
-    def train(self):
-        for epoch in range(config.n_epochs):
-            for i, (imgs, labels) in enumerate(self.dataloader):
-                labels = labels[config.classifier_class].long()
+    def train(self, opt):
+        for epoch in range(opt.epochs):
+            for i, (imgs, labels) in enumerate(opt.dataloader):
+                labels = labels.long()
                 # Adversarial ground truths
                 real_imgs = imgs.to(self.device)
                 real_labels = labels.to(self.device)
@@ -96,8 +73,8 @@ class Trainer:
                 # (1) Update G network: maximize log(D(G(z)))
                 ###########################
                 self.optimizer_G.zero_grad()
-                noise = torch.randn(batch_size, config.latent_dim, device=self.device)
-                gen_labels = torch.randint(0, config.n_classes, (batch_size,), device=self.device)
+                noise = torch.randn(batch_size, opt.n_z, device=self.device)
+                gen_labels = torch.randint(0, opt.n_c, (batch_size,), device=self.device)
                 fake_image = self.net_G(noise, gen_labels)
                 validity, pred_label = self.net_D(fake_image)
                 g_loss = 0.5 * (
@@ -124,22 +101,18 @@ class Trainer:
                 self.optimizer_D.step()
 
                 print('[%d/%d][%d/%d] Loss_D: %.4f Loss_G: %.4f'
-                      % (epoch, config.n_epochs, i, len(self.dataloader),
+                      % (epoch, opt.epochs, i, len(opt.dataloader),
                          d_loss.item(), g_loss.item()))
 
                 if i % 100 == 0:
                     fake = self.net_G(self.fixed_noise, self.fixed_labels)
                     vutils.save_image(real_imgs,
-                                      '../sample/real_samples.png',
+                                      opt.sample_dir + '/real_samples.png',
                                       normalize=True)
                     vutils.save_image(fake.detach(),
-                                      '../sample/fake_samples_epoch_%03d.png' % epoch,
+                                      opt.sample_dir + '/fake_samples_epoch_%03d.png' % epoch,
                                       normalize=True)
-                # do checkpointing
-            torch.save(self.net_G.state_dict(), '../checkpoint/netG_epoch_%d.pth' % epoch)
-            torch.save(self.net_D.state_dict(), '../checkpoint/netD_epoch_%d.pth' % epoch)
-
-
-if __name__ == '__main__':
-    trainer = Trainer()
-    trainer.train()
+            # do checkpointing
+            if epoch % 5 == 0:
+                torch.save(self.net_G.state_dict(), opt.checkpoint_dir+'/netG_epoch_%d.pth' % epoch)
+                torch.save(self.net_D.state_dict(), opt.checkpoint_dir+'/netD_epoch_%d.pth' % epoch)

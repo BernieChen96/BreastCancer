@@ -1,14 +1,14 @@
 # -*- coding: utf-8 -*-
-# @Time    : 2022/10/7 16:31
+# @Time    : 2022/10/14 10:07
 # @Author  : CMM
-# @File    : classify.py
+# @File    : gan_images.py
 # @Software: PyCharm
 import config
-from classifier.train import Trainer
+from gan.acgan.trainer import Trainer
 
 if __name__ == '__main__':
-    parser = config.get_classifier_argument()
+    parser = config.get_gan_argument()
     opt = parser.parse_args()
-    config.post_classifier_config(opt)
+    config.post_gan_config(opt)
     trainer = Trainer(opt)
     trainer.train(opt)

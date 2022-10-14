@@ -21,13 +21,13 @@ def weights_init_normal(m):
 
 
 class Generator(nn.Module):
-    def __init__(self):
+    def __init__(self, opt):
         super(Generator, self).__init__()
 
-        self.label_emb = nn.Embedding(config.n_classes, config.latent_dim)
+        self.label_emb = nn.Embedding(opt.n_c, opt.n_z)
 
-        self.init_size = config.img_size // 4  # Initial size before upsampling
-        self.l1 = nn.Sequential(nn.Linear(config.latent_dim, 128 * self.init_size ** 2))
+        self.init_size = opt.img_size // 4  # Initial size before upsampling
+        self.l1 = nn.Sequential(nn.Linear(opt.n_z, 128 * self.init_size ** 2))
 
         self.conv_blocks = nn.Sequential(
             nn.BatchNorm2d(128),
@@ -39,7 +39,7 @@ class Generator(nn.Module):
             nn.Conv2d(128, 64, 3, stride=1, padding=1),
             nn.BatchNorm2d(64, 0.8),
             nn.LeakyReLU(0.2, inplace=True),
-            nn.Conv2d(64, config.channels, 3, stride=1, padding=1),
+            nn.Conv2d(64, opt.channels, 3, stride=1, padding=1),
             nn.Tanh(),
         )
 
@@ -53,7 +53,7 @@ class Generator(nn.Module):
 
 
 class Discriminator(nn.Module):
-    def __init__(self):
+    def __init__(self, opt):
         super(Discriminator, self).__init__()
 
         def discriminator_block(in_filters, out_filters, bn=True):
@@ -64,18 +64,18 @@ class Discriminator(nn.Module):
             return block
 
         self.conv_blocks = nn.Sequential(
-            *discriminator_block(config.channels, 16, bn=False),
+            *discriminator_block(opt.channels, 16, bn=False),
             *discriminator_block(16, 32),
             *discriminator_block(32, 64),
             *discriminator_block(64, 128),
         )
 
         # The height and width of downsampled image
-        ds_size = config.img_size // 2 ** 4
+        ds_size = opt.img_size // 2 ** 4
 
         # Output layers
         self.adv_layer = nn.Sequential(nn.Linear(128 * ds_size ** 2, 1), nn.Sigmoid())
-        self.aux_layer = nn.Sequential(nn.Linear(128 * ds_size ** 2, config.n_classes),
+        self.aux_layer = nn.Sequential(nn.Linear(128 * ds_size ** 2, opt.n_c),
                                        nn.Softmax(dim=1))
 
     def forward(self, img):
@@ -85,7 +85,3 @@ class Discriminator(nn.Module):
         label = self.aux_layer(out)
 
         return validity, label
-
-
-print(Generator())
-print(Discriminator())

@@ -17,7 +17,7 @@ this database a useful tool since it makes future benchmarking and evaluation po
 
 **Description of acronyms:**
 
-| B = Benign           | M  = Malignant           |
+| B = Benign           | M = Malignant           |
 |----------------------|--------------------------|
 | A = Adenosis         | DC = Ductal Carcinoma    |
 | F = Fibroadenoma     | LC = Lobular Carcinoma   |
@@ -88,7 +88,19 @@ this database a useful tool since it makes future benchmarking and evaluation po
 ### Classify
 
 ```python classify.py --dataset BreakHis --manual_seed 42 --model efficientnet-b0```  
-```python classify.py --dataset cifar10 --manual_seed 42 --model efficientnet-b0 --proportion 0.5```
+```python classify.py --dataset cifar10 --manual_seed 42 --model efficientnet-b0 --proportion 1```
+```python classify.py --dataset cifar10 --manual_seed 42 --model efficientnet-b0 --proportion 0.7```  
+```python classify.py --dataset cifar10 --manual_seed 42 --model efficientnet-b0 --proportion 0.5```  
+```python classify.py --dataset cifar10 --manual_seed 42 --model efficientnet-b0 --proportion 0.3```  
+```python classify.py --dataset cifar10 --manual_seed 42 --model efficientnet-b0 --proportion 0.1```
+
+### generate
+
+```python gan_images.py --model acgan --dataset cifar10 --manual_seed 42 --n_c 10 --img_size 32 --proportion 0.1```  
+```python gan_images.py --model acgan --dataset cifar10 --manual_seed 42 --n_c 10 --img_size 32 --proportion 1```
+
+```python ddpm_images.py --dataset cifar10 --manual_seed 42 --log_rate 100```  
+```python ddpm_images.py --dataset cifar10 --manual_seed 42 --log_rate 100  --use_labels True```
 
 ### Metrics
 
@@ -119,4 +131,17 @@ DenseNet201
 | MC  | 0.30      | 0.28   | 0.29     | 181     |
 | PC  | 0.00      | 0.00   | 0.00     | 127     |
 | PT  | 0.00      | 0.00   | 0.00     | 60      |
-| TA  | 0.08      | 0.08   | 0.08     | 64      |
+| TA  | 0.08      | 0.08   | 0.08     | 64      |  
+
+## notes
+
+### wandb
+
+[wandb 官网](https://wandb.ai/site)
+
+```
+pip install wandb
+wandb login
+10ff2adb7b5b51a1fc79b63c81694fae5f162a06
+
+```

@@ -135,3 +135,7 @@ dmypy.json
 /gan/sample/
 /gan/data/
 /public/
+/classifier/plots/
+/gan/checkpoint/
+/gan/plots/
+/wandb/

@@ -6,6 +6,7 @@
 import os
 import time
 
+import numpy as np
 import torch
 from torch import nn, optim
 
@@ -31,8 +32,11 @@ class Trainer:
         # init criterion & optimizer
         self.criterion = nn.CrossEntropyLoss()
         self.optimizer = optim.Adam(self.model.parameters(), lr=opt.lr, betas=(opt.b1, opt.b2))
+        # init plots
+        self.plots = {'loss': {'train': [], 'val': []},
+                      'acc': {'train': [], 'val': []}}
 
-    def train_step(self, best_acc, opt):
+    def train_step(self, opt, best_acc):
         # 每个epoch都有一个训练和验证阶段，每个epoch都会历遍一次整个训练集
         for phase in ['train', 'val']:
             if phase == 'train':
@@ -89,6 +93,9 @@ class Trainer:
             # 精度，召回率和F1度量
             print('{} Loss: {:.4f} Acc: {:.4f}'.format(phase, epoch_loss, epoch_acc))
 
+            # 记录loss和acc
+            self.plots['loss'][phase].append(epoch_loss)
+            self.plots['acc'][phase].append(epoch_acc)
             # 跟踪最佳性能的模型（从验证准确率方面），并在训练结束时返回性能最好的模型
             if phase == 'val' and epoch_acc > best_acc:
                 best_acc = epoch_acc
@@ -107,7 +114,9 @@ class Trainer:
         for epoch in range(opt.epochs):
             print('Epoch {}/{}'.format(epoch, opt.epochs - 1))
             print('-' * 10)
-            best_acc = self.train_step(best_acc, opt)
+            best_acc = self.train_step(opt, best_acc)
+        # Record the plots
+        np.save(opt.plots, self.plots)
         end = time.perf_counter()
         time_elapsed = end - start
         print('Training complete in {:.0f}m {:.0f}s'.format(time_elapsed // 60, time_elapsed % 60))

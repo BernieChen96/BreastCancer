@@ -10,9 +10,8 @@ import os
 import numpy as np
 import torch
 from PIL import Image
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import Dataset
 from torchvision import transforms, datasets
-from data.image_processing import display_some_images
 
 
 class BreakHisDataset(Dataset):  # 需要继承data.Dataset
@@ -88,31 +87,3 @@ def cifar10_dataset(train=True, data_path='./public', transform=None):
         ])
     return datasets.CIFAR10(root=data_path, train=train, download=True,
                             transform=transform)
-
-
-def show(load_dataset, params):
-    # print(BreakHisDataset.read_file(train_csv)[0])
-    # print(len(BreakHisDataset.read_file(test_csv)))
-    if 'transform' not in params.keys():
-        transform = transforms.Compose([
-            transforms.Resize((224, 224)),
-            transforms.ToTensor(),
-            transforms.Normalize((0.5,), (0.5,))
-        ])
-        params['transform'] = transform
-    print(params)
-    train_data = load_dataset(**params)
-    train_loader = DataLoader(train_data, batch_size=12, num_workers=0, shuffle=True)
-    for i, (images, labels) in enumerate(train_loader):
-        # show_image(image, labels[0][0])
-        print("labels:", labels)
-        if isinstance(labels, list):
-            labels = labels[0]
-        display_some_images(images, labels)
-        break
-
-# torch.manual_seed(42)
-# data_path = 'C:/Users/CMM/Desktop/BreaKHis_v1/histology_slides/breast'
-# show(cifar10_dataset, params={"train": True})
-# show(BreakHisDataset, params={"data_path": "C:/Users/CMM/Desktop/BreaKHis_v1/histology_slides/breast",
-#                               "train": True})
