@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # @Time    : 2022/10/14 9:49
 # @Author  : CMM
-# @File    : test.py
+# @File    : main.py
 # @Software: PyCharm
 import torch
 
